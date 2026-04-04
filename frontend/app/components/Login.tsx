@@ -1,22 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { parseRoleFromJwt } from '../lib/jwt'
 
 type Role = 'admin' | 'staff'
 
 interface LoginProps {
   onLogin: (role: Role, token: string) => void
-}
-
-function parseRole(token: string): Role | null {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    const role = payload.role
-    if (role === 'admin' || role === 'staff') return role
-    return null
-  } catch {
-    return null
-  }
 }
 
 export default function Login({ onLogin }: LoginProps) {
@@ -48,7 +38,7 @@ export default function Login({ onLogin }: LoginProps) {
       }
 
       const { access_token } = await res.json()
-      const role = parseRole(access_token)
+      const role = parseRoleFromJwt(access_token)
 
       if (!role) {
         setError('Token is missing role. Contact your administrator.')

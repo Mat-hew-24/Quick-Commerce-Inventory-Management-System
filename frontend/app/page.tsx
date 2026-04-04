@@ -12,9 +12,9 @@ import ProductsSection from './components/sections/ProductsSection'
 import RestocksSection from './components/sections/RestocksSection'
 import SuppliersSection from './components/sections/SuppliersSection'
 import WarehousesSection from './components/sections/WarehousesSection'
-import {
-} from './data/mockData'
+import {} from './data/mockData'
 import { getSectionAccess } from './lib/access'
+import { parseRoleFromJwt } from './lib/jwt'
 import type {
   CustomerRow,
   InventoryRow,
@@ -134,6 +134,7 @@ function mapProduct(product: ApiProduct): ProductRow {
 
 export default function Home() {
   const [role, setRole] = useState<Role | null>(null)
+  const [token, setToken] = useState<string | null>(null)
   const [products, setProducts] = useState<ProductRow[]>([])
   const [warehouses, setWarehouses] = useState<WarehouseRow[]>([])
   const [inventory, setInventory] = useState<InventoryRow[]>([])
@@ -143,24 +144,98 @@ export default function Home() {
   const [orderItems, setOrderItems] = useState<OrderItemRow[]>([])
   const [restocks, setRestocks] = useState<RestockRow[]>([])
   const [openForm, setOpenForm] = useState<string | null>(null)
-  const [editingCustomer, setEditingCustomer] = useState<CustomerRow | null>(null)
+  const [editingCustomer, setEditingCustomer] = useState<CustomerRow | null>(
+    null,
+  )
   const [customersStatus, setCustomersStatus] = useState('Loading customers...')
-  const [editingSupplier, setEditingSupplier] = useState<SupplierRow | null>(null)
+  const [editingSupplier, setEditingSupplier] = useState<SupplierRow | null>(
+    null,
+  )
   const [suppliersStatus, setSuppliersStatus] = useState('Loading suppliers...')
-  const [editingWarehouse, setEditingWarehouse] = useState<WarehouseRow | null>(null)
-  const [warehousesStatus, setWarehousesStatus] = useState('Loading warehouses...')
+  const [editingWarehouse, setEditingWarehouse] = useState<WarehouseRow | null>(
+    null,
+  )
+  const [warehousesStatus, setWarehousesStatus] = useState(
+    'Loading warehouses...',
+  )
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null)
   const [productsStatus, setProductsStatus] = useState('Loading products...')
-  const [editingInventory, setEditingInventory] = useState<InventoryRow | null>(null)
+  const [editingInventory, setEditingInventory] = useState<InventoryRow | null>(
+    null,
+  )
   const [inventoryStatus, setInventoryStatus] = useState('Loading inventory...')
   const [editingOrder, setEditingOrder] = useState<OrderRow | null>(null)
   const [ordersStatus, setOrdersStatus] = useState('Loading orders...')
-  const [editingOrderItem, setEditingOrderItem] = useState<OrderItemRow | null>(null)
-  const [orderItemsStatus, setOrderItemsStatus] = useState('Loading order items...')
+  const [editingOrderItem, setEditingOrderItem] = useState<OrderItemRow | null>(
+    null,
+  )
+  const [orderItemsStatus, setOrderItemsStatus] = useState(
+    'Loading order items...',
+  )
   const [editingRestock, setEditingRestock] = useState<RestockRow | null>(null)
   const [restocksStatus, setRestocksStatus] = useState('Loading restocks...')
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL
+
+  const handleLogout = useCallback(() => {
+    try {
+      localStorage.removeItem('token')
+    } catch {
+      // ignore
+    }
+    setToken(null)
+    setRole(null)
+  }, [])
+
+  useEffect(() => {
+    try {
+      const existingToken = localStorage.getItem('token')
+      if (!existingToken) {
+        return
+      }
+
+      const existingRole = parseRoleFromJwt(existingToken)
+      if (!existingRole) {
+        localStorage.removeItem('token')
+        return
+      }
+
+      setToken(existingToken)
+      setRole(existingRole)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  const apiFetch = useCallback(
+    async (path: string, init: RequestInit = {}) => {
+      if (!apiBaseUrl) {
+        throw new Error('Missing NEXT_PUBLIC_API_URL in frontend/.env.local.')
+      }
+
+      const activeToken = token ?? localStorage.getItem('token')
+      if (!activeToken) {
+        handleLogout()
+        throw new Error('Missing authentication token. Please log in again.')
+      }
+
+      const headers = new Headers(init.headers)
+      headers.set('Authorization', `Bearer ${activeToken}`)
+
+      const normalizedPath = path.startsWith('/') ? path : `/${path}`
+      const res = await fetch(`${apiBaseUrl}${normalizedPath}`, {
+        ...init,
+        headers,
+      })
+
+      if (res.status === 401 || res.status === 403) {
+        handleLogout()
+      }
+
+      return res
+    },
+    [apiBaseUrl, handleLogout, token],
+  )
 
   const closeCustomerForm = () => {
     setEditingCustomer(null)
@@ -211,7 +286,7 @@ export default function Home() {
     setCustomersStatus('Loading customers...')
 
     try {
-      const res = await fetch(`${apiBaseUrl}/customers/`, { cache: 'no-store' })
+      const res = await apiFetch('/customers/', { cache: 'no-store' })
 
       if (!res.ok) {
         throw new Error(`Failed with status ${res.status}`)
@@ -224,7 +299,9 @@ export default function Home() {
 
       setCustomers(rows)
       setCustomersStatus(
-        rows.length ? '' : 'No customer records yet. Add one to test the live flow.',
+        rows.length
+          ? ''
+          : 'No customer records yet. Add one to test the live flow.',
       )
     } catch (error) {
       setCustomersStatus(
@@ -233,7 +310,7 @@ export default function Home() {
           : 'Could not load customers.',
       )
     }
-  }, [apiBaseUrl])
+  }, [apiBaseUrl, apiFetch])
 
   const loadSuppliers = useCallback(async () => {
     if (!apiBaseUrl) {
@@ -244,7 +321,7 @@ export default function Home() {
     setSuppliersStatus('Loading suppliers...')
 
     try {
-      const res = await fetch(`${apiBaseUrl}/suppliers/`, { cache: 'no-store' })
+      const res = await apiFetch('/suppliers/', { cache: 'no-store' })
 
       if (!res.ok) {
         throw new Error(`Failed with status ${res.status}`)
@@ -257,7 +334,9 @@ export default function Home() {
 
       setSuppliers(rows)
       setSuppliersStatus(
-        rows.length ? '' : 'No supplier records yet. Add one to test the live flow.',
+        rows.length
+          ? ''
+          : 'No supplier records yet. Add one to test the live flow.',
       )
     } catch (error) {
       setSuppliersStatus(
@@ -266,7 +345,7 @@ export default function Home() {
           : 'Could not load suppliers.',
       )
     }
-  }, [apiBaseUrl])
+  }, [apiBaseUrl, apiFetch])
 
   const loadWarehouses = useCallback(async () => {
     if (!apiBaseUrl) {
@@ -277,7 +356,7 @@ export default function Home() {
     setWarehousesStatus('Loading warehouses...')
 
     try {
-      const res = await fetch(`${apiBaseUrl}/warehouses/`, { cache: 'no-store' })
+      const res = await apiFetch('/warehouses/', { cache: 'no-store' })
 
       if (!res.ok) {
         throw new Error(`Failed with status ${res.status}`)
@@ -290,7 +369,9 @@ export default function Home() {
 
       setWarehouses(rows)
       setWarehousesStatus(
-        rows.length ? '' : 'No warehouse records yet. Add one to test the live flow.',
+        rows.length
+          ? ''
+          : 'No warehouse records yet. Add one to test the live flow.',
       )
     } catch (error) {
       setWarehousesStatus(
@@ -299,7 +380,7 @@ export default function Home() {
           : 'Could not load warehouses.',
       )
     }
-  }, [apiBaseUrl])
+  }, [apiBaseUrl, apiFetch])
 
   const loadProducts = useCallback(async () => {
     if (!apiBaseUrl) {
@@ -310,7 +391,7 @@ export default function Home() {
     setProductsStatus('Loading products...')
 
     try {
-      const res = await fetch(`${apiBaseUrl}/products/`, { cache: 'no-store' })
+      const res = await apiFetch('/products/', { cache: 'no-store' })
 
       if (!res.ok) {
         throw new Error(`Failed with status ${res.status}`)
@@ -323,7 +404,9 @@ export default function Home() {
 
       setProducts(rows)
       setProductsStatus(
-        rows.length ? '' : 'No product records yet. Add one to test the live flow.',
+        rows.length
+          ? ''
+          : 'No product records yet. Add one to test the live flow.',
       )
     } catch (error) {
       setProductsStatus(
@@ -332,7 +415,7 @@ export default function Home() {
           : 'Could not load products.',
       )
     }
-  }, [apiBaseUrl])
+  }, [apiBaseUrl, apiFetch])
 
   const loadInventory = useCallback(async () => {
     if (!apiBaseUrl) {
@@ -343,22 +426,30 @@ export default function Home() {
     setInventoryStatus('Loading inventory...')
 
     try {
-      const res = await fetch(`${apiBaseUrl}/inventory/`, { cache: 'no-store' })
+      const res = await apiFetch('/inventory/', { cache: 'no-store' })
 
       if (!res.ok) {
         throw new Error(`Failed with status ${res.status}`)
       }
 
       const payload = await res.json()
-      const warehouseMap = new Map(warehouses.map((warehouse) => [warehouse.id, warehouse.name]))
-      const productMap = new Map(products.map((product) => [product.id, product.name]))
+      const warehouseMap = new Map(
+        warehouses.map((warehouse) => [warehouse.id, warehouse.name]),
+      )
+      const productMap = new Map(
+        products.map((product) => [product.id, product.name]),
+      )
       const rows = Array.isArray(payload.data)
         ? payload.data.map((entry: ApiInventory) => ({
             id: entry.inventory_id,
             warehouseId: entry.warehouse_id,
             productId: entry.product_id,
-            warehouse: warehouseMap.get(entry.warehouse_id) ?? `Warehouse #${entry.warehouse_id}`,
-            product: productMap.get(entry.product_id) ?? `Product #${entry.product_id}`,
+            warehouse:
+              warehouseMap.get(entry.warehouse_id) ??
+              `Warehouse #${entry.warehouse_id}`,
+            product:
+              productMap.get(entry.product_id) ??
+              `Product #${entry.product_id}`,
             quantity: entry.quantity_available,
             reorder: entry.reorder_level,
             available: entry.is_available,
@@ -367,7 +458,9 @@ export default function Home() {
 
       setInventory(rows)
       setInventoryStatus(
-        rows.length ? '' : 'No inventory records yet. Add one to test the live flow.',
+        rows.length
+          ? ''
+          : 'No inventory records yet. Add one to test the live flow.',
       )
     } catch (error) {
       setInventoryStatus(
@@ -376,7 +469,7 @@ export default function Home() {
           : 'Could not load inventory.',
       )
     }
-  }, [apiBaseUrl, products, warehouses])
+  }, [apiBaseUrl, apiFetch, products, warehouses])
 
   const loadOrders = useCallback(async () => {
     if (!apiBaseUrl) {
@@ -387,29 +480,39 @@ export default function Home() {
     setOrdersStatus('Loading orders...')
 
     try {
-      const res = await fetch(`${apiBaseUrl}/orders/`, { cache: 'no-store' })
+      const res = await apiFetch('/orders/', { cache: 'no-store' })
 
       if (!res.ok) {
         throw new Error(`Failed with status ${res.status}`)
       }
 
       const payload = await res.json()
-      const customerMap = new Map(customers.map((customer) => [customer.id, customer.name]))
-      const warehouseMap = new Map(warehouses.map((warehouse) => [warehouse.id, warehouse.name]))
+      const customerMap = new Map(
+        customers.map((customer) => [customer.id, customer.name]),
+      )
+      const warehouseMap = new Map(
+        warehouses.map((warehouse) => [warehouse.id, warehouse.name]),
+      )
       const rows = Array.isArray(payload.data)
         ? payload.data.map((order: ApiOrder) => ({
             id: order.order_id,
             customerId: order.customer_id,
             warehouseId: order.warehouse_id,
-            customer: customerMap.get(order.customer_id) ?? `Customer #${order.customer_id}`,
-            warehouse: warehouseMap.get(order.warehouse_id) ?? `Warehouse #${order.warehouse_id}`,
+            customer:
+              customerMap.get(order.customer_id) ??
+              `Customer #${order.customer_id}`,
+            warehouse:
+              warehouseMap.get(order.warehouse_id) ??
+              `Warehouse #${order.warehouse_id}`,
             status: order.order_status,
             total: order.total_amount,
           }))
         : []
 
       setOrders(rows)
-      setOrdersStatus(rows.length ? '' : 'No orders yet. Create one to test the live flow.')
+      setOrdersStatus(
+        rows.length ? '' : 'No orders yet. Create one to test the live flow.',
+      )
     } catch (error) {
       setOrdersStatus(
         error instanceof Error
@@ -417,7 +520,7 @@ export default function Home() {
           : 'Could not load orders.',
       )
     }
-  }, [apiBaseUrl, customers, warehouses])
+  }, [apiBaseUrl, apiFetch, customers, warehouses])
 
   const loadRestocks = useCallback(async () => {
     if (!apiBaseUrl) {
@@ -428,25 +531,37 @@ export default function Home() {
     setRestocksStatus('Loading restocks...')
 
     try {
-      const res = await fetch(`${apiBaseUrl}/restock/`, { cache: 'no-store' })
+      const res = await apiFetch('/restock/', { cache: 'no-store' })
 
       if (!res.ok) {
         throw new Error(`Failed with status ${res.status}`)
       }
 
       const payload = await res.json()
-      const warehouseMap = new Map(warehouses.map((warehouse) => [warehouse.id, warehouse.name]))
-      const productMap = new Map(products.map((product) => [product.id, product.name]))
-      const supplierMap = new Map(suppliers.map((supplier) => [supplier.id, supplier.name]))
+      const warehouseMap = new Map(
+        warehouses.map((warehouse) => [warehouse.id, warehouse.name]),
+      )
+      const productMap = new Map(
+        products.map((product) => [product.id, product.name]),
+      )
+      const supplierMap = new Map(
+        suppliers.map((supplier) => [supplier.id, supplier.name]),
+      )
       const rows = Array.isArray(payload.data)
         ? payload.data.map((restock: ApiRestock) => ({
             id: restock.restock_id,
             warehouseId: restock.warehouse_id,
             productId: restock.product_id,
             supplierId: restock.supplier_id,
-            warehouse: warehouseMap.get(restock.warehouse_id) ?? `Warehouse #${restock.warehouse_id}`,
-            product: productMap.get(restock.product_id) ?? `Product #${restock.product_id}`,
-            supplier: supplierMap.get(restock.supplier_id) ?? `Supplier #${restock.supplier_id}`,
+            warehouse:
+              warehouseMap.get(restock.warehouse_id) ??
+              `Warehouse #${restock.warehouse_id}`,
+            product:
+              productMap.get(restock.product_id) ??
+              `Product #${restock.product_id}`,
+            supplier:
+              supplierMap.get(restock.supplier_id) ??
+              `Supplier #${restock.supplier_id}`,
             quantity: restock.quantity_requested,
             status: restock.status,
           }))
@@ -454,7 +569,9 @@ export default function Home() {
 
       setRestocks(rows)
       setRestocksStatus(
-        rows.length ? '' : 'No restock requests yet. Create one to test the live flow.',
+        rows.length
+          ? ''
+          : 'No restock requests yet. Create one to test the live flow.',
       )
     } catch (error) {
       setRestocksStatus(
@@ -463,7 +580,7 @@ export default function Home() {
           : 'Could not load restocks.',
       )
     }
-  }, [apiBaseUrl, products, suppliers, warehouses])
+  }, [apiBaseUrl, apiFetch, products, suppliers, warehouses])
 
   const loadOrderItems = useCallback(async () => {
     if (!apiBaseUrl) {
@@ -474,20 +591,23 @@ export default function Home() {
     setOrderItemsStatus('Loading order items...')
 
     try {
-      const res = await fetch(`${apiBaseUrl}/order_items/`, { cache: 'no-store' })
+      const res = await apiFetch('/order_items/', { cache: 'no-store' })
 
       if (!res.ok) {
         throw new Error(`Failed with status ${res.status}`)
       }
 
       const payload = await res.json()
-      const productMap = new Map(products.map((product) => [product.id, product.name]))
+      const productMap = new Map(
+        products.map((product) => [product.id, product.name]),
+      )
       const rows = Array.isArray(payload.data)
         ? payload.data.map((item: ApiOrderItem) => ({
             id: item.order_item_id,
             orderId: item.order_id,
             productId: item.product_id,
-            product: productMap.get(item.product_id) ?? `Product #${item.product_id}`,
+            product:
+              productMap.get(item.product_id) ?? `Product #${item.product_id}`,
             quantity: item.quantity,
             priceAtOrder: item.price_at_order_time,
           }))
@@ -504,7 +624,7 @@ export default function Home() {
           : 'Could not load order items.',
       )
     }
-  }, [apiBaseUrl, products])
+  }, [apiBaseUrl, apiFetch, products])
 
   useEffect(() => {
     if (role) {
@@ -535,12 +655,21 @@ export default function Home() {
 
     if (!customers.length || !warehouses.length) {
       setOrders([])
-      setOrdersStatus('Add at least one customer and one warehouse before managing orders.')
+      setOrdersStatus(
+        'Add at least one customer and one warehouse before managing orders.',
+      )
       return
     }
 
     void loadOrders()
-  }, [customers, customersStatus, loadOrders, role, warehouses, warehousesStatus])
+  }, [
+    customers,
+    customersStatus,
+    loadOrders,
+    role,
+    warehouses,
+    warehousesStatus,
+  ])
 
   useEffect(() => {
     if (!role) {
@@ -589,7 +718,9 @@ export default function Home() {
 
     if (!orders.length || !products.length) {
       setOrderItems([])
-      setOrderItemsStatus('Add at least one order and one product before managing order items.')
+      setOrderItemsStatus(
+        'Add at least one order and one product before managing order items.',
+      )
       return
     }
 
@@ -610,7 +741,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/customers/`, {
+      const res = await apiFetch('/customers/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -644,7 +775,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/customers/${editingCustomer.id}`, {
+      const res = await apiFetch(`/customers/${editingCustomer.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -677,7 +808,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/customers/${customer.id}`, {
+      const res = await apiFetch(`/customers/${customer.id}`, {
         method: 'DELETE',
       })
 
@@ -721,7 +852,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/suppliers/`, {
+      const res = await apiFetch('/suppliers/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -754,7 +885,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/suppliers/${editingSupplier.id}`, {
+      const res = await apiFetch(`/suppliers/${editingSupplier.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -787,7 +918,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/suppliers/${supplier.id}`, {
+      const res = await apiFetch(`/suppliers/${supplier.id}`, {
         method: 'DELETE',
       })
 
@@ -832,7 +963,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/warehouses/`, {
+      const res = await apiFetch('/warehouses/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -866,7 +997,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/warehouses/${editingWarehouse.id}`, {
+      const res = await apiFetch(`/warehouses/${editingWarehouse.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -899,7 +1030,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/warehouses/${warehouse.id}`, {
+      const res = await apiFetch(`/warehouses/${warehouse.id}`, {
         method: 'DELETE',
       })
 
@@ -944,7 +1075,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/products/`, {
+      const res = await apiFetch('/products/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -978,7 +1109,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/products/${editingProduct.id}`, {
+      const res = await apiFetch(`/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -1011,7 +1142,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/products/${product.id}`, {
+      const res = await apiFetch(`/products/${product.id}`, {
         method: 'DELETE',
       })
 
@@ -1057,7 +1188,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/inventory/`, {
+      const res = await apiFetch('/inventory/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(inventoryPayloadFromForm(data)),
@@ -1084,7 +1215,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/inventory/${editingInventory.id}`, {
+      const res = await apiFetch(`/inventory/${editingInventory.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(inventoryPayloadFromForm(data)),
@@ -1119,7 +1250,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/inventory/${entry.id}`, {
+      const res = await apiFetch(`/inventory/${entry.id}`, {
         method: 'DELETE',
       })
 
@@ -1164,7 +1295,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/orders/`, {
+      const res = await apiFetch('/orders/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayloadFromForm(data)),
@@ -1191,7 +1322,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/orders/${editingOrder.id}`, {
+      const res = await apiFetch(`/orders/${editingOrder.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayloadFromForm(data)),
@@ -1224,7 +1355,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/orders/${order.id}`, {
+      const res = await apiFetch(`/orders/${order.id}`, {
         method: 'DELETE',
       })
 
@@ -1270,7 +1401,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/restock/`, {
+      const res = await apiFetch('/restock/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(restockPayloadFromForm(data)),
@@ -1297,7 +1428,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/restock/${editingRestock.id}`, {
+      const res = await apiFetch(`/restock/${editingRestock.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(restockPayloadFromForm(data)),
@@ -1330,7 +1461,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/restock/${restock.id}`, {
+      const res = await apiFetch(`/restock/${restock.id}`, {
         method: 'DELETE',
       })
 
@@ -1375,7 +1506,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/order_items/`, {
+      const res = await apiFetch('/order_items/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderItemPayloadFromForm(data)),
@@ -1402,7 +1533,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/order_items/${editingOrderItem.id}`, {
+      const res = await apiFetch(`/order_items/${editingOrderItem.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderItemPayloadFromForm(data)),
@@ -1435,7 +1566,7 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`${apiBaseUrl}/order_items/${item.id}`, {
+      const res = await apiFetch(`/order_items/${item.id}`, {
         method: 'DELETE',
       })
 
@@ -1467,15 +1598,38 @@ export default function Home() {
   }
 
   if (!role) {
-    return <Login onLogin={(r) => setRole(r)} />
+    return (
+      <Login
+        onLogin={(nextRole, nextToken) => {
+          setRole(nextRole)
+          setToken(nextToken)
+        }}
+      />
+    )
   }
 
   const access = getSectionAccess(role)
   const dashboardStats = [
-    { title: 'Products', value: products.length, subtitle: 'Live `Product` records' },
-    { title: 'Warehouses', value: warehouses.length, subtitle: 'Live `Warehouse` records' },
-    { title: 'Customers', value: customers.length, subtitle: 'Live `Customer` entries' },
-    { title: 'Suppliers', value: suppliers.length, subtitle: 'Live `Supplier` entries' },
+    {
+      title: 'Products',
+      value: products.length,
+      subtitle: 'Live `Product` records',
+    },
+    {
+      title: 'Warehouses',
+      value: warehouses.length,
+      subtitle: 'Live `Warehouse` records',
+    },
+    {
+      title: 'Customers',
+      value: customers.length,
+      subtitle: 'Live `Customer` entries',
+    },
+    {
+      title: 'Suppliers',
+      value: suppliers.length,
+      subtitle: 'Live `Supplier` entries',
+    },
     { title: 'Orders', value: orders.length, subtitle: 'Live `Order` entries' },
     {
       title: 'Restocks',
@@ -1487,7 +1641,7 @@ export default function Home() {
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-white p-5 md:p-10'>
       <div className='mx-auto w-full max-w-6xl'>
-        <QcimsHeader role={role} onLogout={() => setRole(null)} />
+        <QcimsHeader role={role} onLogout={handleLogout} />
 
         <section className='mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
           {dashboardStats.map((stat) => (
