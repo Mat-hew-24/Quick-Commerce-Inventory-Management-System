@@ -1,4 +1,6 @@
-import CrudSection from "../dashboard/CrudSection";
+import AddRecordForm from "../AddRecordForm";
+import DataTable from "../dashboard/DataTable";
+import SectionCard from "../dashboard/SectionCard";
 import type { Access, RestockRow, Row } from "../../types/qcims";
 
 export default function RestocksSection({
@@ -8,6 +10,14 @@ export default function RestocksSection({
   onOpenForm,
   onCloseForm,
   onSubmit,
+  editingRow,
+  onEdit,
+  onDelete,
+  statusMessage,
+  warehouseOptions,
+  productOptions,
+  supplierOptions,
+  statusOptions,
 }: {
   rows: RestockRow[];
   access: Access;
@@ -15,34 +25,93 @@ export default function RestocksSection({
   onOpenForm: () => void;
   onCloseForm: () => void;
   onSubmit: (data: Row) => void;
+  editingRow?: RestockRow | null;
+  onEdit: (row: RestockRow) => void;
+  onDelete: (row: RestockRow) => void;
+  statusMessage?: string;
+  warehouseOptions: Array<{ label: string; value: string }>;
+  productOptions: Array<{ label: string; value: string }>;
+  supplierOptions: Array<{ label: string; value: string }>;
+  statusOptions: Array<{ label: string; value: string }>;
 }) {
   return (
-    <CrudSection
+    <SectionCard
       title="Restock Requests"
-      addLabel="New Restock"
-      rows={rows}
-      access={access}
-      actions={{ primary: "Mark Received" }}
-      formTitle="Restock Request"
-      fields={[
-        { name: "warehouse", label: "Warehouse", type: "text", required: true },
-        { name: "product", label: "Product", type: "text", required: true },
-        { name: "supplier", label: "Supplier", type: "text", required: true },
-        { name: "quantity", label: "Quantity", type: "number", required: true },
-        { name: "status", label: "Status", type: "text", required: true },
-      ]}
-      columns={[
-        { key: "id", label: "Request ID" },
-        { key: "warehouse", label: "Warehouse" },
-        { key: "product", label: "Product" },
-        { key: "supplier", label: "Supplier" },
-        { key: "quantity", label: "Quantity" },
-        { key: "status", label: "Status" },
-      ]}
-      isFormOpen={isFormOpen}
-      onOpenForm={onOpenForm}
-      onCloseForm={onCloseForm}
-      onSubmit={onSubmit}
-    />
+      action={
+        access.create ? (
+          <button
+            type="button"
+            onClick={onOpenForm}
+            className="rounded-md bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            New Restock
+          </button>
+        ) : undefined
+      }
+    >
+      {statusMessage && (
+        <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          {statusMessage}
+        </p>
+      )}
+      {isFormOpen && (
+        <AddRecordForm
+          title={editingRow ? "Restock Request" : "Restock"}
+          fields={[
+            {
+              name: "warehouse",
+              label: "Warehouse",
+              type: "select",
+              required: true,
+              options: warehouseOptions,
+            },
+            {
+              name: "product",
+              label: "Product",
+              type: "select",
+              required: true,
+              options: productOptions,
+            },
+            {
+              name: "supplier",
+              label: "Supplier",
+              type: "select",
+              required: true,
+              options: supplierOptions,
+            },
+            { name: "quantity", label: "Quantity", type: "number", required: true },
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              required: true,
+              options: statusOptions,
+            },
+          ]}
+          initialValues={editingRow ?? undefined}
+          submitLabel={editingRow ? "Update" : "Save"}
+          onSubmit={onSubmit}
+          onCancel={onCloseForm}
+        />
+      )}
+      <DataTable
+        rows={rows}
+        access={access}
+        actions={{
+          primary: "Update",
+          secondary: "Delete",
+          onPrimary: onEdit,
+          onSecondary: onDelete,
+        }}
+        columns={[
+          { key: "id", label: "Request ID" },
+          { key: "warehouse", label: "Warehouse" },
+          { key: "product", label: "Product" },
+          { key: "supplier", label: "Supplier" },
+          { key: "quantity", label: "Quantity" },
+          { key: "status", label: "Status" },
+        ]}
+      />
+    </SectionCard>
   );
 }

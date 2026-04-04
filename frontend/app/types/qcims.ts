@@ -19,8 +19,9 @@ export type DashboardStat = {
 export type FormField = {
   name: string;
   label: string;
-  type: "text" | "number" | "email" | "checkbox";
+  type: "text" | "number" | "email" | "checkbox" | "select";
   required?: boolean;
+  options?: Array<{ label: string; value: string }>;
 };
 
 export type DataColumn<T extends Row> = {
@@ -47,6 +48,8 @@ export type WarehouseRow = {
 
 export type InventoryRow = {
   id: number;
+  warehouseId: number;
+  productId: number;
   warehouse: string;
   product: string;
   quantity: number;
@@ -71,6 +74,8 @@ export type SupplierRow = {
 
 export type OrderRow = {
   id: number;
+  customerId: number;
+  warehouseId: number;
   customer: string;
   warehouse: string;
   status: string;
@@ -80,6 +85,7 @@ export type OrderRow = {
 export type OrderItemRow = {
   id: number;
   orderId: number;
+  productId: number;
   product: string;
   quantity: number;
   priceAtOrder: number;
@@ -87,6 +93,9 @@ export type OrderItemRow = {
 
 export type RestockRow = {
   id: number;
+  warehouseId: number;
+  productId: number;
+  supplierId: number;
   warehouse: string;
   product: string;
   supplier: string;

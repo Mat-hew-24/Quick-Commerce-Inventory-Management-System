@@ -1,4 +1,6 @@
-import CrudSection from "../dashboard/CrudSection";
+import AddRecordForm from "../AddRecordForm";
+import DataTable from "../dashboard/DataTable";
+import SectionCard from "../dashboard/SectionCard";
 import type { Access, InventoryRow, Row } from "../../types/qcims";
 
 export default function InventorySection({
@@ -8,6 +10,12 @@ export default function InventorySection({
   onOpenForm,
   onCloseForm,
   onSubmit,
+  editingRow,
+  onEdit,
+  onDelete,
+  statusMessage,
+  warehouseOptions,
+  productOptions,
 }: {
   rows: InventoryRow[];
   access: Access;
@@ -15,34 +23,79 @@ export default function InventorySection({
   onOpenForm: () => void;
   onCloseForm: () => void;
   onSubmit: (data: Row) => void;
+  editingRow?: InventoryRow | null;
+  onEdit: (row: InventoryRow) => void;
+  onDelete: (row: InventoryRow) => void;
+  statusMessage?: string;
+  warehouseOptions: Array<{ label: string; value: string }>;
+  productOptions: Array<{ label: string; value: string }>;
 }) {
   return (
-    <CrudSection
+    <SectionCard
       title="Inventory"
-      addLabel="Add Inventory"
-      rows={rows}
-      access={access}
-      actions={{ primary: "Update Stock" }}
-      formTitle="Inventory Entry"
-      fields={[
-        { name: "warehouse", label: "Warehouse", type: "text", required: true },
-        { name: "product", label: "Product", type: "text", required: true },
-        { name: "quantity", label: "Quantity", type: "number", required: true },
-        { name: "reorder", label: "Reorder Level", type: "number", required: true },
-        { name: "is_available", label: "Available", type: "checkbox" },
-      ]}
-      columns={[
-        { key: "id", label: "ID" },
-        { key: "warehouse", label: "Warehouse" },
-        { key: "product", label: "Product" },
-        { key: "quantity", label: "Qty" },
-        { key: "reorder", label: "Reorder" },
-        { key: "available", label: "Available", render: (value) => (value ? "Yes" : "No") },
-      ]}
-      isFormOpen={isFormOpen}
-      onOpenForm={onOpenForm}
-      onCloseForm={onCloseForm}
-      onSubmit={onSubmit}
-    />
+      action={
+        access.create ? (
+          <button
+            type="button"
+            onClick={onOpenForm}
+            className="rounded-md bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Add Inventory
+          </button>
+        ) : undefined
+      }
+    >
+      {statusMessage && (
+        <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          {statusMessage}
+        </p>
+      )}
+      {isFormOpen && (
+        <AddRecordForm
+          title={editingRow ? "Inventory Entry" : "Inventory"}
+          fields={[
+            {
+              name: "warehouse",
+              label: "Warehouse",
+              type: "select",
+              required: true,
+              options: warehouseOptions,
+            },
+            {
+              name: "product",
+              label: "Product",
+              type: "select",
+              required: true,
+              options: productOptions,
+            },
+            { name: "quantity", label: "Quantity", type: "number", required: true },
+            { name: "reorder", label: "Reorder Level", type: "number", required: true },
+            { name: "is_available", label: "Available", type: "checkbox" },
+          ]}
+          initialValues={editingRow ?? undefined}
+          submitLabel={editingRow ? "Update" : "Save"}
+          onSubmit={onSubmit}
+          onCancel={onCloseForm}
+        />
+      )}
+      <DataTable
+        rows={rows}
+        access={access}
+        actions={{
+          primary: "Update Stock",
+          secondary: "Delete",
+          onPrimary: onEdit,
+          onSecondary: onDelete,
+        }}
+        columns={[
+          { key: "id", label: "ID" },
+          { key: "warehouse", label: "Warehouse" },
+          { key: "product", label: "Product" },
+          { key: "quantity", label: "Qty" },
+          { key: "reorder", label: "Reorder" },
+          { key: "available", label: "Available", render: (value) => (value ? "Yes" : "No") },
+        ]}
+      />
+    </SectionCard>
   );
 }

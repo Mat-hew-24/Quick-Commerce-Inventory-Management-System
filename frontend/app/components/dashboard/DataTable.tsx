@@ -4,9 +4,13 @@ import type { Access, DataColumn, Row } from "../../types/qcims";
 function ActionCell({
   access,
   labels,
+  onPrimary,
+  onSecondary,
 }: {
   access: Access;
   labels?: { primary: string; secondary?: string };
+  onPrimary?: () => void;
+  onSecondary?: () => void;
 }) {
   if (!labels || (!access.edit && !access.remove)) {
     return <span className="text-sm text-slate-400">View only</span>;
@@ -15,14 +19,34 @@ function ActionCell({
   return (
     <>
       {access.edit && (
-        <span className="mr-3 cursor-not-allowed text-slate-400">
-          {labels.primary}
-        </span>
+        onPrimary ? (
+          <button
+            type="button"
+            onClick={onPrimary}
+            className="mr-3 font-medium text-blue-600 hover:text-blue-800"
+          >
+            {labels.primary}
+          </button>
+        ) : (
+          <span className="mr-3 cursor-not-allowed text-slate-400">
+            {labels.primary}
+          </span>
+        )
       )}
       {access.remove && labels.secondary && (
-        <span className="cursor-not-allowed text-slate-400">
-          {labels.secondary}
-        </span>
+        onSecondary ? (
+          <button
+            type="button"
+            onClick={onSecondary}
+            className="font-medium text-rose-600 hover:text-rose-800"
+          >
+            {labels.secondary}
+          </button>
+        ) : (
+          <span className="cursor-not-allowed text-slate-400">
+            {labels.secondary}
+          </span>
+        )
       )}
     </>
   );
@@ -37,7 +61,12 @@ export default function DataTable<T extends Row>({
   columns: DataColumn<T>[];
   rows: T[];
   access?: Access;
-  actions?: { primary: string; secondary?: string };
+  actions?: {
+    primary: string;
+    secondary?: string;
+    onPrimary?: (row: T) => void;
+    onSecondary?: (row: T) => void;
+  };
 }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200">
@@ -67,7 +96,18 @@ export default function DataTable<T extends Row>({
               ))}
               {access && (
                 <td className="px-4 py-3 text-sm">
-                  <ActionCell access={access} labels={actions} />
+                  <ActionCell
+                    access={access}
+                    labels={actions}
+                    onPrimary={
+                      actions?.onPrimary ? () => actions.onPrimary?.(row) : undefined
+                    }
+                    onSecondary={
+                      actions?.onSecondary
+                        ? () => actions.onSecondary?.(row)
+                        : undefined
+                    }
+                  />
                 </td>
               )}
             </tr>
