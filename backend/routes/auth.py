@@ -1,10 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 from supabase import create_client, Client
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import os
 
@@ -21,12 +21,19 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-app = FastAPI()
+router = APIRouter()
 
 
 class UserCreate(BaseModel):
-    email: str
+    email: EmailStr
     password: str
+
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v):
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
 
 
 class Token(BaseModel):
@@ -44,29 +51,36 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode["exp"] = expire
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def get_user_by_email(email: str):
-    res = supabase.table("users").select("*").eq("email", email).single().execute()
-    return res.data
+    try:
+        res = supabase.table("users").select("*").eq("email", email).single().execute()
+        return res.data
+    except Exception:
+        return None
 
 
-@app.post("/register", status_code=201)
+@router.post("/register", status_code=201)
 def register(user: UserCreate):
     existing = get_user_by_email(user.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed = hash_password(user.password)
-    supabase.table("users").insert(
-        {"email": user.email, "hashed_password": hashed}
-    ).execute()
+    res = (
+        supabase.table("users")
+        .insert({"email": user.email, "hashed_password": hashed})
+        .execute()
+    )
+    if not res.data:
+        raise HTTPException(status_code=500, detail="Failed to create user")
     return {"message": "User registered successfully"}
 
 
-@app.post("/login", response_model=Token)
+@router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = get_user_by_email(form_data.username)
     if not user or not verify_password(form_data.password, user["hashed_password"]):
@@ -75,11 +89,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    token = create_access_token({"sub": user["email"], "user_id": user["id"]})
+    token = create_access_token(
+        {"sub": str(user["id"]), "email": user["email"], "role": user["role"]}
+    )
     return {"access_token": token, "token_type": "bearer"}
 
 
-@app.get("/me")
+@router.get("/me")
 def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -88,7 +104,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
+        email: str = payload.get("email")
         if email is None:
             raise credentials_exception
     except JWTError:
@@ -98,4 +114,4 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     if not user:
         raise credentials_exception
 
-    return {"email": user["email"], "id": user["id"]}
+    return {"email": user["email"], "id": user["id"], "role": user["role"]}

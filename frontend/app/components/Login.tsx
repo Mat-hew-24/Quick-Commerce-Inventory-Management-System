@@ -1,117 +1,123 @@
-"use client";
+'use client'
 
-import { useState } from "react";
+import { useState } from 'react'
 
-type Role = "admin" | "staff";
+type Role = 'admin' | 'staff'
 
 interface LoginProps {
-  onLogin: (role: Role) => void;
+  onLogin: (role: Role, token: string) => void
 }
 
-const demoAccounts = {
-  admin: {
-    employeeId: "admin01",
-    password: "admin123",
-    label: "Admin",
-  },
-  staff: {
-    employeeId: "staff01",
-    password: "staff123",
-    label: "Staff",
-  },
-} as const;
+function parseRole(token: string): Role | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const role = payload.role
+    if (role === 'admin' || role === 'staff') return role
+    return null
+  } catch {
+    return null
+  }
+}
 
 export default function Login({ onLogin }: LoginProps) {
-  const [employeeId, setEmployeeId] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("staff");
-  const [error, setError] = useState("");
+  const [employeeId, setEmployeeId] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
 
-    const selectedAccount = demoAccounts[role];
+    try {
+      const form = new URLSearchParams()
+      form.append('username', employeeId.trim())
+      form.append('password', password)
 
-    if (
-      employeeId.trim() === selectedAccount.employeeId &&
-      password === selectedAccount.password
-    ) {
-      onLogin(role);
-    } else {
-      setError("Invalid employee ID, password, or role selection.");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: form.toString(),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.detail ?? 'Invalid credentials.')
+        return
+      }
+
+      const { access_token } = await res.json()
+      const role = parseRole(access_token)
+
+      if (!role) {
+        setError('Token is missing role. Contact your administrator.')
+        return
+      }
+
+      localStorage.setItem('token', access_token)
+      onLogin(role, access_token)
+    } catch {
+      setError('Could not reach the server. Try again.')
+    } finally {
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-slate-900">QCIMS Login</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Sign in with your role and credentials.
+    <div className='flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10'>
+      <div className='w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg'>
+        <div className='mb-8 text-center'>
+          <h1 className='text-3xl font-bold text-slate-900'>QCIMS Login</h1>
+          <p className='mt-2 text-sm text-slate-600'>
+            Sign in with your credentials.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className='space-y-5'>
           <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">
-              Access Role
-            </label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="admin">Admin</option>
-              <option value="staff">Staff</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">
+            <label className='block text-sm font-semibold text-slate-900 mb-2'>
               Employee ID
             </label>
             <input
-              type="text"
+              type='text'
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
-              placeholder={demoAccounts[role].employeeId}
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder='Enter your employee ID'
+              className='w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500'
               required
             />
           </div>
+
           <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">
+            <label className='block text-sm font-semibold text-slate-900 mb-2'>
               Password
             </label>
             <input
-              type="password"
+              type='password'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={demoAccounts[role].password}
-              className="w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder='Enter your password'
+              className='w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500'
               required
             />
           </div>
+
           {error && (
-            <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+            <p className='rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700'>
               {error}
             </p>
           )}
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Login
-          </button>
 
-          <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-            <p className="font-semibold text-slate-900">Demo Credentials</p>
-            <p className="mt-2">Admin: `admin01` / `admin123`</p>
-            <p>Staff: `staff01` / `staff123`</p>
-          </div>
+          <button
+            type='submit'
+            disabled={loading}
+            className='w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed'
+          >
+            {loading ? 'Signing in...' : 'Login'}
+          </button>
         </form>
       </div>
     </div>
-  );
+  )
 }
