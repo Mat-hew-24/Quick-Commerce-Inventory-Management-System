@@ -15,6 +15,7 @@ import WarehousesSection from './components/sections/WarehousesSection'
 import {} from './data/mockData'
 import { getSectionAccess } from './lib/access'
 import { parseRoleFromJwt } from './lib/jwt'
+import Lenis from 'lenis'
 import type {
   CustomerRow,
   InventoryRow,
@@ -202,8 +203,24 @@ export default function Home() {
 
       setToken(existingToken)
       setRole(existingRole)
-    } catch {
-      // ignore
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 0.5,
+      smoothWheel: true,
+    })
+
+    const raf = (time: number) => {
+      lenis.raf(time)
+      requestAnimationFrame(raf)
+    }
+
+    requestAnimationFrame(raf)
+
+    return () => {
+      lenis.destroy()
     }
   }, [])
 
