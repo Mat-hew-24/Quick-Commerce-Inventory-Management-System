@@ -1,8 +1,8 @@
 type SummaryCardProps = {
-  title: string;
-  value: number;
-  subtitle: string;
-};
+  title: string
+  value: number
+  subtitle: string
+}
 
 export default function SummaryCard({
   title,
@@ -10,12 +10,14 @@ export default function SummaryCard({
   subtitle,
 }: SummaryCardProps) {
   return (
-    <article className="bg-gradient-to-br from-cyan-600 to-blue-700 text-white rounded-xl p-5 shadow-2xl ring-1 ring-slate-900/10 w-full md:w-[260px]">
-      <h3 className="font-semibold text-xs uppercase tracking-wider opacity-90">
+    <article className='ui-card w-full p-5 md:w-65'>
+      <h3 className='text-xs font-semibold uppercase tracking-wider text-slate-500'>
         {title}
       </h3>
-      <div className="mt-3 text-4xl font-bold tracking-tight">{value}</div>
-      <p className="text-xs opacity-90 mt-2">{subtitle}</p>
+      <div className='mt-3 text-3xl font-semibold tracking-tight text-slate-900'>
+        {value}
+      </div>
+      <p className='mt-2 text-sm text-slate-600'>{subtitle}</p>
     </article>
-  );
+  )
 }

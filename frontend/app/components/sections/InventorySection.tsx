@@ -1,7 +1,7 @@
-import AddRecordForm from "../AddRecordForm";
-import DataTable from "../dashboard/DataTable";
-import SectionCard from "../dashboard/SectionCard";
-import type { Access, InventoryRow, Row } from "../../types/qcims";
+import AddRecordForm from '../AddRecordForm'
+import DataTable from '../dashboard/DataTable'
+import SectionCard from '../dashboard/SectionCard'
+import type { Access, InventoryRow, Row } from '../../types/qcims'
 
 export default function InventorySection({
   rows,
@@ -17,28 +17,28 @@ export default function InventorySection({
   warehouseOptions,
   productOptions,
 }: {
-  rows: InventoryRow[];
-  access: Access;
-  isFormOpen: boolean;
-  onOpenForm: () => void;
-  onCloseForm: () => void;
-  onSubmit: (data: Row) => void;
-  editingRow?: InventoryRow | null;
-  onEdit: (row: InventoryRow) => void;
-  onDelete: (row: InventoryRow) => void;
-  statusMessage?: string;
-  warehouseOptions: Array<{ label: string; value: string }>;
-  productOptions: Array<{ label: string; value: string }>;
+  rows: InventoryRow[]
+  access: Access
+  isFormOpen: boolean
+  onOpenForm: () => void
+  onCloseForm: () => void
+  onSubmit: (data: Row) => void
+  editingRow?: InventoryRow | null
+  onEdit: (row: InventoryRow) => void
+  onDelete: (row: InventoryRow) => void
+  statusMessage?: string
+  warehouseOptions: Array<{ label: string; value: string }>
+  productOptions: Array<{ label: string; value: string }>
 }) {
   return (
     <SectionCard
-      title="Inventory"
+      title='Inventory'
       action={
         access.create ? (
           <button
-            type="button"
+            type='button'
             onClick={onOpenForm}
-            className="rounded-md bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className='ui-button-primary'
           >
             Add Inventory
           </button>
@@ -46,34 +46,44 @@ export default function InventorySection({
       }
     >
       {statusMessage && (
-        <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <p className='mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600'>
           {statusMessage}
         </p>
       )}
       {isFormOpen && (
         <AddRecordForm
-          title={editingRow ? "Inventory Entry" : "Inventory"}
+          title={editingRow ? 'Inventory Entry' : 'Inventory'}
           fields={[
             {
-              name: "warehouse",
-              label: "Warehouse",
-              type: "select",
+              name: 'warehouse',
+              label: 'Warehouse',
+              type: 'select',
               required: true,
               options: warehouseOptions,
             },
             {
-              name: "product",
-              label: "Product",
-              type: "select",
+              name: 'product',
+              label: 'Product',
+              type: 'select',
               required: true,
               options: productOptions,
             },
-            { name: "quantity", label: "Quantity", type: "number", required: true },
-            { name: "reorder", label: "Reorder Level", type: "number", required: true },
-            { name: "is_available", label: "Available", type: "checkbox" },
+            {
+              name: 'quantity',
+              label: 'Quantity',
+              type: 'number',
+              required: true,
+            },
+            {
+              name: 'reorder',
+              label: 'Reorder Level',
+              type: 'number',
+              required: true,
+            },
+            { name: 'is_available', label: 'Available', type: 'checkbox' },
           ]}
           initialValues={editingRow ?? undefined}
-          submitLabel={editingRow ? "Update" : "Save"}
+          submitLabel={editingRow ? 'Update' : 'Save'}
           onSubmit={onSubmit}
           onCancel={onCloseForm}
         />
@@ -82,20 +92,24 @@ export default function InventorySection({
         rows={rows}
         access={access}
         actions={{
-          primary: "Update Stock",
-          secondary: "Delete",
+          primary: 'Update Stock',
+          secondary: 'Delete',
           onPrimary: onEdit,
           onSecondary: onDelete,
         }}
         columns={[
-          { key: "id", label: "ID" },
-          { key: "warehouse", label: "Warehouse" },
-          { key: "product", label: "Product" },
-          { key: "quantity", label: "Qty" },
-          { key: "reorder", label: "Reorder" },
-          { key: "available", label: "Available", render: (value) => (value ? "Yes" : "No") },
+          { key: 'id', label: 'ID' },
+          { key: 'warehouse', label: 'Warehouse' },
+          { key: 'product', label: 'Product' },
+          { key: 'quantity', label: 'Qty' },
+          { key: 'reorder', label: 'Reorder' },
+          {
+            key: 'available',
+            label: 'Available',
+            render: (value) => (value ? 'Yes' : 'No'),
+          },
         ]}
       />
     </SectionCard>
-  );
+  )
 }

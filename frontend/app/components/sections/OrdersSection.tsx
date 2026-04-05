@@ -1,8 +1,8 @@
-import AddRecordForm from "../AddRecordForm";
-import DataTable from "../dashboard/DataTable";
-import SectionCard from "../dashboard/SectionCard";
-import { money } from "../../lib/format";
-import type { Access, OrderRow, Row } from "../../types/qcims";
+import AddRecordForm from '../AddRecordForm'
+import DataTable from '../dashboard/DataTable'
+import SectionCard from '../dashboard/SectionCard'
+import { money } from '../../lib/format'
+import type { Access, OrderRow, Row } from '../../types/qcims'
 
 export default function OrdersSection({
   rows,
@@ -19,29 +19,29 @@ export default function OrdersSection({
   warehouseOptions,
   statusOptions,
 }: {
-  rows: OrderRow[];
-  access: Access;
-  isFormOpen: boolean;
-  onOpenForm: () => void;
-  onCloseForm: () => void;
-  onSubmit: (data: Row) => void;
-  editingRow?: OrderRow | null;
-  onEdit: (row: OrderRow) => void;
-  onDelete: (row: OrderRow) => void;
-  statusMessage?: string;
-  customerOptions: Array<{ label: string; value: string }>;
-  warehouseOptions: Array<{ label: string; value: string }>;
-  statusOptions: Array<{ label: string; value: string }>;
+  rows: OrderRow[]
+  access: Access
+  isFormOpen: boolean
+  onOpenForm: () => void
+  onCloseForm: () => void
+  onSubmit: (data: Row) => void
+  editingRow?: OrderRow | null
+  onEdit: (row: OrderRow) => void
+  onDelete: (row: OrderRow) => void
+  statusMessage?: string
+  customerOptions: Array<{ label: string; value: string }>
+  warehouseOptions: Array<{ label: string; value: string }>
+  statusOptions: Array<{ label: string; value: string }>
 }) {
   return (
     <SectionCard
-      title="Orders"
+      title='Orders'
       action={
         access.create ? (
           <button
-            type="button"
+            type='button'
             onClick={onOpenForm}
-            className="rounded-md bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className='ui-button-primary'
           >
             Create Order
           </button>
@@ -49,39 +49,39 @@ export default function OrdersSection({
       }
     >
       {statusMessage && (
-        <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <p className='mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600'>
           {statusMessage}
         </p>
       )}
       {isFormOpen && (
         <AddRecordForm
-          title={editingRow ? "Order Details" : "Order"}
+          title={editingRow ? 'Order Details' : 'Order'}
           fields={[
             {
-              name: "customer",
-              label: "Customer",
-              type: "select",
+              name: 'customer',
+              label: 'Customer',
+              type: 'select',
               required: true,
               options: customerOptions,
             },
             {
-              name: "warehouse",
-              label: "Warehouse",
-              type: "select",
+              name: 'warehouse',
+              label: 'Warehouse',
+              type: 'select',
               required: true,
               options: warehouseOptions,
             },
             {
-              name: "status",
-              label: "Status",
-              type: "select",
+              name: 'status',
+              label: 'Status',
+              type: 'select',
               required: true,
               options: statusOptions,
             },
-            { name: "total", label: "Total", type: "number", required: true },
+            { name: 'total', label: 'Total', type: 'number', required: true },
           ]}
           initialValues={editingRow ?? undefined}
-          submitLabel={editingRow ? "Update" : "Save"}
+          submitLabel={editingRow ? 'Update' : 'Save'}
           onSubmit={onSubmit}
           onCancel={onCloseForm}
         />
@@ -90,19 +90,23 @@ export default function OrdersSection({
         rows={rows}
         access={access}
         actions={{
-          primary: "Update Status",
-          secondary: "Delete",
+          primary: 'Update Status',
+          secondary: 'Delete',
           onPrimary: onEdit,
           onSecondary: onDelete,
         }}
         columns={[
-          { key: "id", label: "Order ID" },
-          { key: "customer", label: "Customer" },
-          { key: "warehouse", label: "Warehouse" },
-          { key: "status", label: "Status" },
-          { key: "total", label: "Total", render: (value) => money.format(Number(value)) },
+          { key: 'id', label: 'Order ID' },
+          { key: 'customer', label: 'Customer' },
+          { key: 'warehouse', label: 'Warehouse' },
+          { key: 'status', label: 'Status' },
+          {
+            key: 'total',
+            label: 'Total',
+            render: (value) => money.format(Number(value)),
+          },
         ]}
       />
     </SectionCard>
-  );
+  )
 }

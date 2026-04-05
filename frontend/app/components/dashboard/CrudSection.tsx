@@ -1,7 +1,7 @@
-import AddRecordForm from "../AddRecordForm";
-import type { Access, DataColumn, FormField, Row } from "../../types/qcims";
-import DataTable from "./DataTable";
-import SectionCard from "./SectionCard";
+import AddRecordForm from '../AddRecordForm'
+import type { Access, DataColumn, FormField, Row } from '../../types/qcims'
+import DataTable from './DataTable'
+import SectionCard from './SectionCard'
 
 export default function CrudSection<T extends Row>({
   title,
@@ -17,18 +17,18 @@ export default function CrudSection<T extends Row>({
   onCloseForm,
   onSubmit,
 }: {
-  title: string;
-  addLabel?: string;
-  rows: T[];
-  columns: DataColumn<T>[];
-  access: Access;
-  actions?: { primary: string; secondary?: string };
-  formTitle?: string;
-  fields?: FormField[];
-  isFormOpen?: boolean;
-  onOpenForm?: () => void;
-  onCloseForm?: () => void;
-  onSubmit?: (data: Row) => void;
+  title: string
+  addLabel?: string
+  rows: T[]
+  columns: DataColumn<T>[]
+  access: Access
+  actions?: { primary: string; secondary?: string }
+  formTitle?: string
+  fields?: FormField[]
+  isFormOpen?: boolean
+  onOpenForm?: () => void
+  onCloseForm?: () => void
+  onSubmit?: (data: Row) => void
 }) {
   return (
     <SectionCard
@@ -36,9 +36,9 @@ export default function CrudSection<T extends Row>({
       action={
         access.create && addLabel && onOpenForm ? (
           <button
-            type="button"
+            type='button'
             onClick={onOpenForm}
-            className="rounded-md bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className='ui-button-primary'
           >
             {addLabel}
           </button>
@@ -53,7 +53,12 @@ export default function CrudSection<T extends Row>({
           onCancel={onCloseForm}
         />
       )}
-      <DataTable columns={columns} rows={rows} access={access} actions={actions} />
+      <DataTable
+        columns={columns}
+        rows={rows}
+        access={access}
+        actions={actions}
+      />
     </SectionCard>
-  );
+  )
 }

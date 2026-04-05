@@ -1656,11 +1656,11 @@ export default function Home() {
   ]
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-white p-5 md:p-10'>
+    <div className='min-h-screen bg-slate-50 p-5 md:p-10'>
       <div className='mx-auto w-full max-w-6xl'>
         <QcimsHeader role={role} onLogout={handleLogout} />
 
-        <section className='mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
+        <section className='mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
           {dashboardStats.map((stat) => (
             <SummaryCard
               key={stat.title}

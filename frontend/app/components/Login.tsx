@@ -55,18 +55,16 @@ export default function Login({ onLogin }: LoginProps) {
   }
 
   return (
-    <div className='flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10'>
-      <div className='w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg'>
+    <div className='flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10'>
+      <div className='ui-card w-full max-w-md p-8'>
         <div className='mb-8 text-center'>
           <h1 className='text-3xl font-bold text-slate-900'>QCIMS Login</h1>
-          <p className='mt-2 text-sm text-slate-600'>
-            Sign in with your credentials.
-          </p>
+          <p className='ui-muted mt-2'>Sign in with your credentials.</p>
         </div>
 
         <form onSubmit={handleSubmit} className='space-y-5'>
           <div>
-            <label className='block text-sm font-semibold text-slate-900 mb-2'>
+            <label className='mb-2 block text-sm font-semibold text-slate-900'>
               Employee ID
             </label>
             <input
@@ -74,13 +72,13 @@ export default function Login({ onLogin }: LoginProps) {
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
               placeholder='Enter your employee ID'
-              className='w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='ui-input px-4 py-3'
               required
             />
           </div>
 
           <div>
-            <label className='block text-sm font-semibold text-slate-900 mb-2'>
+            <label className='mb-2 block text-sm font-semibold text-slate-900'>
               Password
             </label>
             <input
@@ -88,7 +86,7 @@ export default function Login({ onLogin }: LoginProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder='Enter your password'
-              className='w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className='ui-input px-4 py-3'
               required
             />
           </div>
@@ -102,7 +100,7 @@ export default function Login({ onLogin }: LoginProps) {
           <button
             type='submit'
             disabled={loading}
-            className='w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed'
+            className='ui-button-primary w-full px-4 py-3 font-semibold'
           >
             {loading ? 'Signing in...' : 'Login'}
           </button>

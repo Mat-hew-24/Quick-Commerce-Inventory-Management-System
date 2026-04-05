@@ -1,7 +1,7 @@
-import AddRecordForm from "../AddRecordForm";
-import DataTable from "../dashboard/DataTable";
-import SectionCard from "../dashboard/SectionCard";
-import type { Access, RestockRow, Row } from "../../types/qcims";
+import AddRecordForm from '../AddRecordForm'
+import DataTable from '../dashboard/DataTable'
+import SectionCard from '../dashboard/SectionCard'
+import type { Access, RestockRow, Row } from '../../types/qcims'
 
 export default function RestocksSection({
   rows,
@@ -19,30 +19,30 @@ export default function RestocksSection({
   supplierOptions,
   statusOptions,
 }: {
-  rows: RestockRow[];
-  access: Access;
-  isFormOpen: boolean;
-  onOpenForm: () => void;
-  onCloseForm: () => void;
-  onSubmit: (data: Row) => void;
-  editingRow?: RestockRow | null;
-  onEdit: (row: RestockRow) => void;
-  onDelete: (row: RestockRow) => void;
-  statusMessage?: string;
-  warehouseOptions: Array<{ label: string; value: string }>;
-  productOptions: Array<{ label: string; value: string }>;
-  supplierOptions: Array<{ label: string; value: string }>;
-  statusOptions: Array<{ label: string; value: string }>;
+  rows: RestockRow[]
+  access: Access
+  isFormOpen: boolean
+  onOpenForm: () => void
+  onCloseForm: () => void
+  onSubmit: (data: Row) => void
+  editingRow?: RestockRow | null
+  onEdit: (row: RestockRow) => void
+  onDelete: (row: RestockRow) => void
+  statusMessage?: string
+  warehouseOptions: Array<{ label: string; value: string }>
+  productOptions: Array<{ label: string; value: string }>
+  supplierOptions: Array<{ label: string; value: string }>
+  statusOptions: Array<{ label: string; value: string }>
 }) {
   return (
     <SectionCard
-      title="Restock Requests"
+      title='Restock Requests'
       action={
         access.create ? (
           <button
-            type="button"
+            type='button'
             onClick={onOpenForm}
-            className="rounded-md bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className='ui-button-primary'
           >
             New Restock
           </button>
@@ -50,46 +50,51 @@ export default function RestocksSection({
       }
     >
       {statusMessage && (
-        <p className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+        <p className='mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600'>
           {statusMessage}
         </p>
       )}
       {isFormOpen && (
         <AddRecordForm
-          title={editingRow ? "Restock Request" : "Restock"}
+          title={editingRow ? 'Restock Request' : 'Restock'}
           fields={[
             {
-              name: "warehouse",
-              label: "Warehouse",
-              type: "select",
+              name: 'warehouse',
+              label: 'Warehouse',
+              type: 'select',
               required: true,
               options: warehouseOptions,
             },
             {
-              name: "product",
-              label: "Product",
-              type: "select",
+              name: 'product',
+              label: 'Product',
+              type: 'select',
               required: true,
               options: productOptions,
             },
             {
-              name: "supplier",
-              label: "Supplier",
-              type: "select",
+              name: 'supplier',
+              label: 'Supplier',
+              type: 'select',
               required: true,
               options: supplierOptions,
             },
-            { name: "quantity", label: "Quantity", type: "number", required: true },
             {
-              name: "status",
-              label: "Status",
-              type: "select",
+              name: 'quantity',
+              label: 'Quantity',
+              type: 'number',
+              required: true,
+            },
+            {
+              name: 'status',
+              label: 'Status',
+              type: 'select',
               required: true,
               options: statusOptions,
             },
           ]}
           initialValues={editingRow ?? undefined}
-          submitLabel={editingRow ? "Update" : "Save"}
+          submitLabel={editingRow ? 'Update' : 'Save'}
           onSubmit={onSubmit}
           onCancel={onCloseForm}
         />
@@ -98,20 +103,20 @@ export default function RestocksSection({
         rows={rows}
         access={access}
         actions={{
-          primary: "Update",
-          secondary: "Delete",
+          primary: 'Update',
+          secondary: 'Delete',
           onPrimary: onEdit,
           onSecondary: onDelete,
         }}
         columns={[
-          { key: "id", label: "Request ID" },
-          { key: "warehouse", label: "Warehouse" },
-          { key: "product", label: "Product" },
-          { key: "supplier", label: "Supplier" },
-          { key: "quantity", label: "Quantity" },
-          { key: "status", label: "Status" },
+          { key: 'id', label: 'Request ID' },
+          { key: 'warehouse', label: 'Warehouse' },
+          { key: 'product', label: 'Product' },
+          { key: 'supplier', label: 'Supplier' },
+          { key: 'quantity', label: 'Quantity' },
+          { key: 'status', label: 'Status' },
         ]}
       />
     </SectionCard>
-  );
+  )
 }

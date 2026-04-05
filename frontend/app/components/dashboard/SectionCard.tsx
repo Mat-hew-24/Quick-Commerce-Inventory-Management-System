@@ -1,21 +1,23 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react'
 
 export default function SectionCard({
   title,
   action,
   children,
 }: {
-  title: string;
-  action?: ReactNode;
-  children: ReactNode;
+  title: string
+  action?: ReactNode
+  children: ReactNode
 }) {
   return (
-    <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-lg">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+    <section className='ui-card mb-8 p-6'>
+      <div className='mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+        <h2 className='text-lg font-semibold text-slate-900 md:text-xl'>
+          {title}
+        </h2>
         {action}
       </div>
       {children}
     </section>
-  );
+  )
 }
