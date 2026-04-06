@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime
+from logging.handlers import TimedRotatingFileHandler  # 1. Import the new handler
 
 os.makedirs("logs", exist_ok=True)
 
@@ -15,7 +16,14 @@ class PrettyFormatter(logging.Formatter):
         return f"[{now}]  {record.getMessage()}"
 
 
-handler = logging.FileHandler("logs/activity.log", encoding="utf-8")
+# 2. Swap FileHandler for TimedRotatingFileHandler
+handler = TimedRotatingFileHandler(
+    filename="logs/activity.log",
+    when="midnight",  # Rotate the logs at midnight
+    interval=1,  # Every 1 day
+    backupCount=7,  # Keep exactly 7 backups (deletes older ones automatically)
+    encoding="utf-8",
+)
 handler.setFormatter(PrettyFormatter())
 
 logger = logging.getLogger("qcims")

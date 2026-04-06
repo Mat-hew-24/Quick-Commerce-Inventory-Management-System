@@ -11,7 +11,7 @@ from routes import (
     auth,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse
 import os
 import csv
 import io
@@ -48,11 +48,26 @@ app.include_router(auth.router)
 
 
 @app.get("/logs")
-def get_logs():
-    log_path = "logs/activity.log"
-    if not os.path.exists(log_path):
-        return {"detail": "No logs yet"}
-    return FileResponse(log_path, media_type="text/plain", filename="activity.log")
+def get_logs(current_user=Depends(auth.get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admins only")
+    log_dir = "logs"
+    combined_logs = ""
+    if os.path.exists(log_dir):
+        files = [f for f in os.listdir(log_dir) if f.startswith("activity.log")]
+        files.sort(key=lambda x: os.path.getmtime(os.path.join(log_dir, x)))
+        for filename in files:
+            filepath = os.path.join(log_dir, filename)
+            with open(filepath, "r", encoding="utf-8") as f:
+                combined_logs += f.read()
+    if not combined_logs:
+        raise HTTPException(status_code=404, detail="No logs found")
+    return PlainTextResponse(
+        content=combined_logs,
+        headers={
+            "Content-Disposition": 'attachment; filename="activity_past_7_days.log"'
+        },
+    )
 
 
 def table_to_csv(table_name: str, id_col: str) -> StreamingResponse:

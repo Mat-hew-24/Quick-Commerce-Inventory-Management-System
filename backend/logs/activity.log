@@ -85,3 +85,6 @@
 2026-04-06 19:36:46 | HTTP Request: GET https://bylfhrnluaxqhkpjhfgt.supabase.co/rest/v1/orderitem?select=%2A&limit=1 "HTTP/2 200 OK"
 2026-04-06 19:36:46 | HTTP Request: GET https://bylfhrnluaxqhkpjhfgt.supabase.co/rest/v1/orderitem?select=%2A "HTTP/2 200 OK"
 [06 Apr 2026  08:20:04 PM]  admin@qcims                    LOGGED IN
+[06 Apr 2026  08:39:10 PM]  admin@qcims                    LOGGED IN
+[06 Apr 2026  08:39:40 PM]  staff1@qcims                   LOGGED IN
+[06 Apr 2026  08:39:56 PM]  admin@qcims                    LOGGED IN
