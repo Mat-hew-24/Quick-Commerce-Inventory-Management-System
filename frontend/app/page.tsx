@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import Login from './components/Login'
 import QcimsHeader from './components/QcimsHeader'
 import SummaryCard from './components/SummaryCard'
@@ -134,6 +134,7 @@ function mapProduct(product: ApiProduct): ProductRow {
 }
 
 export default function Home() {
+  const lenisRef = useRef<Lenis | null>(null)
   const [role, setRole] = useState<Role | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [products, setProducts] = useState<ProductRow[]>([])
@@ -208,19 +209,25 @@ export default function Home() {
 
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 0.5,
+      duration: 1,
       smoothWheel: true,
     })
 
+    lenisRef.current = lenis
+
+    let rafId: number
+
     const raf = (time: number) => {
       lenis.raf(time)
-      requestAnimationFrame(raf)
+      rafId = requestAnimationFrame(raf)
     }
 
-    requestAnimationFrame(raf)
+    rafId = requestAnimationFrame(raf)
 
     return () => {
+      cancelAnimationFrame(rafId)
       lenis.destroy()
+      lenisRef.current = null
     }
   }, [])
 

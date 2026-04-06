@@ -6,6 +6,7 @@ from pydantic import BaseModel, EmailStr, field_validator
 from supabase import create_client, Client
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
+from logger import log
 import os
 
 load_dotenv()
@@ -64,6 +65,26 @@ def get_user_by_email(email: str):
         return None
 
 
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("email")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = get_user_by_email(email)
+    if not user:
+        raise credentials_exception
+    return user
+
+
 @router.post("/register", status_code=201)
 def register(user: UserCreate):
     existing = get_user_by_email(user.email)
@@ -84,6 +105,7 @@ def register(user: UserCreate):
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     user = get_user_by_email(form_data.username)
     if not user or not verify_password(form_data.password, user["hashed_password"]):
+        log(form_data.username, "FAILED LOGIN attempt")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -92,26 +114,14 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     token = create_access_token(
         {"sub": str(user["id"]), "email": user["email"], "role": user["role"]}
     )
+    log(user["email"], "LOGGED IN")
     return {"access_token": token, "token_type": "bearer"}
 
 
 @router.get("/me")
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate token",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("email")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
-    user = get_user_by_email(email)
-    if not user:
-        raise credentials_exception
-
-    return {"email": user["email"], "id": user["id"], "role": user["role"]}
+def me(current_user=Depends(get_current_user)):
+    return {
+        "email": current_user["email"],
+        "id": current_user["id"],
+        "role": current_user["role"],
+    }

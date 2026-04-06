@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from db import supabase
 from models import RestockRequest
+from routes.auth import get_current_user
+from logger import log
 
 router = APIRouter()
 RESTOCK_TABLE_CANDIDATES = ("RestockRequest", "restockrequest", "restock")
@@ -19,29 +21,37 @@ def get_restock_table_name() -> str:
         detail="Unable to resolve restock table. Tried: " + " | ".join(errors),
     )
 
-# CREATE
-@router.post("/")
-def add_restock(restock: RestockRequest):
-    return supabase.table(get_restock_table_name()).insert(restock.dict()).execute()
 
-# READ
+@router.post("/")
+def add_restock(restock: RestockRequest, current_user=Depends(get_current_user)):
+    res = supabase.table(get_restock_table_name()).insert(restock.dict()).execute()
+    log(current_user["email"], f"INSERTED restock request")
+    return res
+
+
 @router.get("/")
 def get_restocks():
     return supabase.table(get_restock_table_name()).select("*").execute()
 
-# DELETE
+
 @router.delete("/{id}")
-def delete_restock(id: int):
-    return (
+def delete_restock(id: int, current_user=Depends(get_current_user)):
+    res = (
+        supabase.table(get_restock_table_name()).delete().eq("restock_id", id).execute()
+    )
+    log(current_user["email"], f"DELETED restock id={id}")
+    return res
+
+
+@router.put("/{id}")
+def update_restock(
+    id: int, restock: RestockRequest, current_user=Depends(get_current_user)
+):
+    res = (
         supabase.table(get_restock_table_name())
-        .delete()
+        .update(restock.dict())
         .eq("restock_id", id)
         .execute()
     )
-
-@router.put("/{id}")
-def update_restock(id: int, restock: RestockRequest):
-    return supabase.table(get_restock_table_name()) \
-        .update(restock.dict()) \
-        .eq("restock_id", id) \
-        .execute()
+    log(current_user["email"], f"UPDATED restock id={id}")
+    return res
