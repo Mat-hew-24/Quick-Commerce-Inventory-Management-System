@@ -11,6 +11,8 @@ from routes import (
     auth,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+import os
 
 app = FastAPI()
 
@@ -30,3 +32,11 @@ app.include_router(orders.router, prefix="/orders")
 app.include_router(suppliers.router, prefix="/suppliers")
 app.include_router(restock.router, prefix="/restock")
 app.include_router(auth.router)
+
+
+@app.get("/logs")
+def get_logs():
+    log_path = "logs/activity.log"
+    if not os.path.exists(log_path):
+        return {"detail": "No logs yet"}
+    return FileResponse(log_path, media_type="text/plain", filename="activity.log")
