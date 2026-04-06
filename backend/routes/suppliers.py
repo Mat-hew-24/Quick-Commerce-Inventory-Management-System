@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from db import supabase
+from fastapi import HTTPException
 from models import Supplier
 from routes.auth import get_current_user
 from logger import log

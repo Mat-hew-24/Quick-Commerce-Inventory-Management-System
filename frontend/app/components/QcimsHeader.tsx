@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react'
 type QcimsHeaderProps = {
   role: 'admin' | 'staff'
   onLogout: () => void
+  onAddUser?: () => void
 }
 
 const TABLES = [
@@ -17,11 +18,14 @@ const TABLES = [
   'restock',
 ]
 
-export default function QcimsHeader({ role, onLogout }: QcimsHeaderProps) {
+export default function QcimsHeader({
+  role,
+  onLogout,
+  onAddUser,
+}: QcimsHeaderProps) {
   const [showExport, setShowExport] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -83,6 +87,17 @@ export default function QcimsHeader({ role, onLogout }: QcimsHeaderProps) {
         </div>
 
         <div className='flex flex-wrap items-center gap-3 self-start md:self-auto'>
+          {/* ✅ Add User button (from Rachel branch) */}
+          {role === 'admin' && (
+            <button
+              type='button'
+              onClick={onAddUser}
+              className='rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors shadow-sm'
+            >
+              + Add User
+            </button>
+          )}
+
           <span className='rounded-md border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-slate-600'>
             {role}
           </span>
@@ -92,7 +107,7 @@ export default function QcimsHeader({ role, onLogout }: QcimsHeaderProps) {
               <button
                 type='button'
                 onClick={handleDownloadLogs}
-                className='inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200 cursor-pointer'
+                className='inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50'
               >
                 Logs
               </button>
@@ -101,20 +116,19 @@ export default function QcimsHeader({ role, onLogout }: QcimsHeaderProps) {
                 <button
                   type='button'
                   onClick={() => setShowExport((v) => !v)}
-                  className='inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200 cursor-pointer'
+                  className='inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50'
                 >
                   Export Tables
                 </button>
 
                 {showExport && (
-                  <div className='absolute right-0 top-full z-10 mt-2 w-48 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg ring-1 ring-black/5'>
+                  <div className='absolute right-0 top-full z-10 mt-2 w-48 rounded-md border border-slate-200 bg-white shadow-lg'>
                     <div className='py-1'>
                       {TABLES.map((table) => (
                         <button
                           key={table}
-                          type='button'
                           onClick={() => downloadTable(table)}
-                          className='block w-full px-4 py-2 text-left text-sm font-medium text-slate-700 capitalize transition-colors hover:bg-slate-100 hover:text-slate-900'
+                          className='block w-full px-4 py-2 text-left text-sm capitalize hover:bg-slate-100'
                         >
                           {table}
                         </button>
@@ -129,7 +143,7 @@ export default function QcimsHeader({ role, onLogout }: QcimsHeaderProps) {
           <button
             type='button'
             onClick={onLogout}
-            className='inline-flex items-center justify-center whitespace-nowrap rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 cursor-pointer'
+            className='rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800'
           >
             Logout
           </button>

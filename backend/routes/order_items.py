@@ -5,21 +5,6 @@ from routes.auth import get_current_user
 from logger import log
 
 router = APIRouter()
-ORDER_ITEM_TABLE_CANDIDATES = ("OrderItem", "orderitem", "order_items")
-
-
-def get_order_item_table_name() -> str:
-    errors = []
-    for table_name in ORDER_ITEM_TABLE_CANDIDATES:
-        try:
-            supabase.table(table_name).select("*").limit(1).execute()
-            return table_name
-        except Exception as exc:
-            errors.append(f"{table_name}: {exc}")
-    raise HTTPException(
-        status_code=500,
-        detail="Unable to resolve order item table. Tried: " + " | ".join(errors),
-    )
 
 
 @router.post("/")
@@ -33,7 +18,7 @@ def add_order_item(order_item: OrderItem, current_user=Depends(get_current_user)
 
 @router.get("/")
 def get_order_items():
-    return supabase.table(get_order_item_table_name()).select("*").execute()
+    return supabase.table("orderitem").select("*").execute()
 
 
 @router.delete("/{id}")
